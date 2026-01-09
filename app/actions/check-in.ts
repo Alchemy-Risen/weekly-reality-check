@@ -3,6 +3,7 @@
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { getCurrentWeek, getRotatingWeekNumber } from '@/lib/utils'
 import { sendPostSubmitEmail } from '@/lib/email'
+import { markTokenAsUsed } from '@/lib/magic-link'
 import { redirect } from 'next/navigation'
 
 export async function submitCheckIn(formData: FormData) {
@@ -10,6 +11,7 @@ export async function submitCheckIn(formData: FormData) {
 
   // Extract form data
   const userId = formData.get('userId') as string
+  const token = formData.get('token') as string
   const revenue = parseFloat(formData.get('revenue') as string)
   const hours = parseFloat(formData.get('hours') as string)
   const satisfaction = parseInt(formData.get('satisfaction') as string)
@@ -18,8 +20,8 @@ export async function submitCheckIn(formData: FormData) {
   const q2 = formData.get('q2') as string
   const context = formData.get('context') as string
 
-  // Validate userId
-  if (!userId) {
+  // Validate userId and token
+  if (!userId || !token) {
     throw new Error('Invalid session')
   }
 
@@ -74,6 +76,9 @@ export async function submitCheckIn(formData: FormData) {
     }
     throw new Error('Failed to save check-in: ' + checkInError.message)
   }
+
+  // Mark magic link token as used (check-in successfully submitted)
+  await markTokenAsUsed(token)
 
   // Get user email for sending summary
   const { data: user } = await supabase

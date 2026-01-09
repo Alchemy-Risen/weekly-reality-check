@@ -82,6 +82,7 @@ export async function validateToken(token: string): Promise<{
   valid: boolean
   userId?: string
   email?: string
+  token?: string
   error?: string
 }> {
   const supabase = getSupabaseAdmin()
@@ -111,12 +112,7 @@ export async function validateToken(token: string): Promise<{
       return { valid: false, error: 'Token expired' }
     }
 
-    // Mark token as used
-    await supabase
-      .from('magic_tokens')
-      .update({ used_at: now.toISOString() })
-      .eq('token', token)
-
+    // Don't mark as used yet - only mark when check-in is submitted
     // Return user info
     const user = magicToken.users as any
 
@@ -124,11 +120,24 @@ export async function validateToken(token: string): Promise<{
       valid: true,
       userId: user.id,
       email: user.email,
+      token, // Return token so we can mark it as used later
     }
   } catch (error) {
     console.error('Token validation error:', error)
     return { valid: false, error: 'Token validation failed' }
   }
+}
+
+/**
+ * Mark a magic link token as used
+ */
+export async function markTokenAsUsed(token: string): Promise<void> {
+  const supabase = getSupabaseAdmin()
+
+  await supabase
+    .from('magic_tokens')
+    .update({ used_at: new Date().toISOString() })
+    .eq('token', token)
 }
 
 /**

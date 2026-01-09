@@ -94,8 +94,9 @@ export default async function CheckInPage({
         </div>
 
         <form action={submitCheckIn} className="space-y-12">
-          {/* Hidden field to pass user ID */}
+          {/* Hidden fields to pass user ID and token */}
           <input type="hidden" name="userId" value={validation.userId} />
+          <input type="hidden" name="token" value={validation.token} />
 
           {/* Numeric Inputs Section */}
           <section className="space-y-6">
