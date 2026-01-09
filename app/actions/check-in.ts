@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from '@/lib/supabase'
 import { getCurrentWeek, getRotatingWeekNumber } from '@/lib/utils'
 import { sendPostSubmitEmail } from '@/lib/email'
 import { markTokenAsUsed } from '@/lib/magic-link'
+import { generateSummary } from '@/lib/ai-summary'
 import { redirect } from 'next/navigation'
 
 export async function submitCheckIn(formData: FormData) {
@@ -80,27 +81,84 @@ export async function submitCheckIn(formData: FormData) {
   // Mark magic link token as used (check-in successfully submitted)
   await markTokenAsUsed(token)
 
-  // Get user email for sending summary
-  const { data: user } = await supabase
-    .from('users')
-    .select('email')
-    .eq('id', userId)
-    .single()
+  // Generate AI summary (in background - don't block redirect)
+  // This will update the check-in record and send the email
+  generateAndSendSummary(
+    supabase,
+    userId,
+    checkIn.id,
+    weekNumber,
+    { revenue, hours, satisfaction, energy },
+    { q1, q2, context }
+  ).catch((error) => {
+    console.error('Failed to generate/send summary:', error)
+    // Don't block user experience
+  })
 
-  if (user) {
-    // Send post-submit summary email (don't await - let it happen in background)
-    // TODO: Generate AI summary first
-    sendPostSubmitEmail(
-      user.email,
-      checkIn.id,
-      getRotatingWeekNumber(weekNumber),
-      { revenue, hours, satisfaction, energy }
-    ).catch((error) => {
-      console.error('Failed to send post-submit email:', error)
-      // Don't block the user experience if email fails
-    })
-  }
-
-  // Redirect to completion page
+  // Redirect to completion page immediately
   redirect(`/complete/${checkIn.id}`)
+}
+
+/**
+ * Generate AI summary and send post-submit email
+ * Runs in background - errors are logged but don't affect user flow
+ */
+async function generateAndSendSummary(
+  supabase: any,
+  userId: string,
+  checkInId: string,
+  weekNumber: number,
+  numericData: { revenue: number; hours: number; satisfaction: number; energy: number },
+  narrativeData: { q1: string; q2: string; context?: string }
+) {
+  try {
+    // Fetch user email
+    const { data: user } = await supabase
+      .from('users')
+      .select('email')
+      .eq('id', userId)
+      .single()
+
+    if (!user?.email) {
+      console.error('User email not found for AI summary')
+      return
+    }
+
+    // Get current year for CheckInData
+    const { year } = getCurrentWeek()
+
+    // Construct CheckInData for AI summary
+    const currentCheckIn = {
+      week_number: weekNumber,
+      year,
+      numeric_data: numericData,
+      narrative_data: narrativeData,
+      submitted_at: new Date().toISOString(),
+    }
+
+    // Generate AI summary
+    const aiSummary = await generateSummary(userId, currentCheckIn)
+
+    // Update check-in with AI summary if generated
+    if (aiSummary) {
+      await supabase
+        .from('check_ins')
+        .update({ ai_summary: aiSummary })
+        .eq('id', checkInId)
+    }
+
+    // Send post-submit email with summary
+    await sendPostSubmitEmail(
+      user.email,
+      weekNumber,
+      numericData,
+      narrativeData,
+      aiSummary
+    )
+
+    console.log(`✅ AI summary generated and email sent for check-in ${checkInId}`)
+  } catch (error) {
+    console.error('Error in generateAndSendSummary:', error)
+    // Don't throw - this runs in background and shouldn't affect user experience
+  }
 }
