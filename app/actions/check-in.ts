@@ -150,9 +150,9 @@ async function generateAndSendSummary(
     // Send post-submit email with summary
     await sendPostSubmitEmail(
       user.email,
+      checkInId,
       weekNumber,
       numericData,
-      narrativeData,
       aiSummary
     )
 

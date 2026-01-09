@@ -70,7 +70,7 @@ Week ${rotatingWeek} (${index === 0 ? 'current' : `${index} weeks ago`}):
 
     // Call Claude API with strict "no advice" system prompt
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-3-5-sonnet-20240620',
       max_tokens: 500,
       temperature: 0.3, // Lower temperature for more factual, less creative
       system: `You are analyzing weekly check-in data for a solo founder/operator.
