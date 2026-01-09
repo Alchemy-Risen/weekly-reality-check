@@ -48,6 +48,7 @@ An email-first SaaS that forces weekly numeric and decision-based reflection for
 - **Email**: Resend
 - **AI**: Anthropic Claude (summarization only)
 - **Auth**: Magic link only (no passwords)
+- **Domain**: weeklyrealitycheck.com
 
 ## Development Commands
 

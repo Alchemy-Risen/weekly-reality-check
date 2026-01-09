@@ -1,3 +1,7 @@
+import { getSupabaseClient } from '@/lib/supabase'
+import { getCurrentWeek, getRotatingWeekNumber } from '@/lib/utils'
+import { submitCheckIn } from '@/app/actions/check-in'
+
 export default async function CheckInPage({
   params,
 }: {
@@ -6,7 +10,23 @@ export default async function CheckInPage({
   const { token } = await params;
 
   // TODO: Validate token and get user/week info
-  // For now, just show the form
+
+  // Get current week info
+  const { weekNumber, year } = getCurrentWeek()
+  const rotatingWeek = getRotatingWeekNumber(weekNumber)
+
+  // Fetch questions for this week from database
+  const supabase = getSupabaseClient()
+  const { data: questionSet } = await supabase
+    .from('question_sets')
+    .select('questions')
+    .eq('week_number', rotatingWeek)
+    .single()
+
+  const questions = questionSet?.questions || {
+    q1: 'What decision are you avoiding?',
+    q2: 'What feels harder than it should?',
+  }
 
   return (
     <div className="min-h-screen bg-white px-6 py-12 font-mono">
@@ -15,10 +35,12 @@ export default async function CheckInPage({
           <h1 className="mb-2 text-3xl font-bold text-black">
             Weekly Check-In
           </h1>
-          <p className="text-zinc-600">Week 1 of 12-week cycle</p>
+          <p className="text-zinc-600">
+            Week {rotatingWeek} of 12-week cycle
+          </p>
         </div>
 
-        <form className="space-y-12">
+        <form action={submitCheckIn} className="space-y-12">
           {/* Numeric Inputs Section */}
           <section className="space-y-6">
             <h2 className="border-b border-zinc-300 pb-2 text-xl font-semibold text-black">
@@ -37,6 +59,7 @@ export default async function CheckInPage({
                   type="number"
                   id="revenue"
                   name="revenue"
+                  step="0.01"
                   required
                   className="w-full border-b-2 border-zinc-300 bg-transparent px-2 py-2 text-lg focus:border-black focus:outline-none"
                   placeholder="0"
@@ -54,6 +77,7 @@ export default async function CheckInPage({
                   type="number"
                   id="hours"
                   name="hours"
+                  step="0.5"
                   required
                   className="w-full border-b-2 border-zinc-300 bg-transparent px-2 py-2 text-lg focus:border-black focus:outline-none"
                   placeholder="0"
@@ -112,7 +136,7 @@ export default async function CheckInPage({
                   htmlFor="q1"
                   className="mb-3 block text-base font-medium text-black"
                 >
-                  What decision are you avoiding?
+                  {questions.q1}
                 </label>
                 <textarea
                   id="q1"
@@ -129,7 +153,7 @@ export default async function CheckInPage({
                   htmlFor="q2"
                   className="mb-3 block text-base font-medium text-black"
                 >
-                  What feels harder than it should?
+                  {questions.q2}
                 </label>
                 <textarea
                   id="q2"
