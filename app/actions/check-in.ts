@@ -153,7 +153,7 @@ async function generateAndSendSummary(
       checkInId,
       weekNumber,
       numericData,
-      aiSummary
+      aiSummary ?? undefined
     )
 
     console.log(`✅ AI summary generated and email sent for check-in ${checkInId}`)
