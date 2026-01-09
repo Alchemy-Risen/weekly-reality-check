@@ -19,7 +19,7 @@ export default function CheckEmailPage() {
 
           <div className="mt-12 border-t border-zinc-200 pt-8">
             <p className="text-base text-zinc-600">
-              Didn't get the email? Check your spam folder. Still nothing? Email us at support@weeklyrealitycheck.com
+              Didn't get the email? Check your spam folder. Still nothing? Email us at hello@weeklyrealitycheck.com
             </p>
           </div>
 
