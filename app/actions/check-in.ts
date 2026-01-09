@@ -8,6 +8,7 @@ export async function submitCheckIn(formData: FormData) {
   const supabase = getSupabaseAdmin()
 
   // Extract form data
+  const userId = formData.get('userId') as string
   const revenue = parseFloat(formData.get('revenue') as string)
   const hours = parseFloat(formData.get('hours') as string)
   const satisfaction = parseInt(formData.get('satisfaction') as string)
@@ -15,6 +16,11 @@ export async function submitCheckIn(formData: FormData) {
   const q1 = formData.get('q1') as string
   const q2 = formData.get('q2') as string
   const context = formData.get('context') as string
+
+  // Validate userId
+  if (!userId) {
+    throw new Error('Invalid session')
+  }
 
   // Validate numeric inputs
   if (
@@ -38,37 +44,11 @@ export async function submitCheckIn(formData: FormData) {
   // Get current week info
   const { weekNumber, year } = getCurrentWeek()
 
-  // TODO: Get user from token validation
-  // For now, we'll create a test user
-  const testEmail = 'test@example.com'
-
-  // Get or create user
-  let { data: user, error: userError } = await supabase
-    .from('users')
-    .select('*')
-    .eq('email', testEmail)
-    .single()
-
-  if (userError || !user) {
-    // Create user
-    const { data: newUser, error: createError } = await supabase
-      .from('users')
-      .insert({ email: testEmail })
-      .select()
-      .single()
-
-    if (createError) {
-      throw new Error('Failed to create user: ' + createError.message)
-    }
-
-    user = newUser
-  }
-
   // Save check-in
   const { data: checkIn, error: checkInError } = await supabase
     .from('check_ins')
     .insert({
-      user_id: user.id,
+      user_id: userId,
       week_number: weekNumber,
       year,
       numeric_data: {
@@ -97,6 +77,6 @@ export async function submitCheckIn(formData: FormData) {
   // TODO: Generate AI summary
   // TODO: Send post-submit email
 
-  // Redirect to thank you page
-  redirect(`/check-in/${checkIn.id}/complete`)
+  // Redirect to completion page
+  redirect(`/complete/${checkIn.id}`)
 }

@@ -1,5 +1,6 @@
 import { getSupabaseClient } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
+import Footer from '@/app/components/Footer'
 
 export default async function CompletePage({
   params,
@@ -114,6 +115,8 @@ export default async function CompletePage({
               You can close this page now.
             </p>
           </div>
+
+          <Footer />
         </div>
       </main>
     </div>

@@ -1,6 +1,8 @@
 import { getSupabaseClient } from '@/lib/supabase'
 import { getCurrentWeek, getRotatingWeekNumber } from '@/lib/utils'
 import { submitCheckIn } from '@/app/actions/check-in'
+import { validateToken, hasSubmittedThisWeek } from '@/lib/magic-link'
+import Footer from '@/app/components/Footer'
 
 export default async function CheckInPage({
   params,
@@ -9,7 +11,58 @@ export default async function CheckInPage({
 }) {
   const { token } = await params;
 
-  // TODO: Validate token and get user/week info
+  // Validate magic link token
+  const validation = await validateToken(token)
+
+  if (!validation.valid) {
+    return (
+      <div className="min-h-screen bg-white px-6 py-12 font-mono">
+        <main className="mx-auto max-w-2xl">
+          <div className="mb-8">
+            <h1 className="mb-3 text-3xl font-bold text-black">Invalid Link</h1>
+            <p className="text-lg text-zinc-600">
+              {validation.error === 'Token already used' && 'This check-in link has already been used.'}
+              {validation.error === 'Token expired' && 'This check-in link has expired.'}
+              {validation.error === 'Invalid token' && 'This check-in link is not valid.'}
+              {!validation.error && 'This check-in link is not valid.'}
+            </p>
+          </div>
+          <div className="border-t border-zinc-200 pt-8">
+            <p className="text-zinc-600">
+              You should receive a new check-in email next week. If you think this is an error, contact support.
+            </p>
+          </div>
+
+          <Footer />
+        </main>
+      </div>
+    )
+  }
+
+  // Check if user already submitted this week
+  const alreadySubmitted = await hasSubmittedThisWeek(validation.userId!)
+
+  if (alreadySubmitted) {
+    return (
+      <div className="min-h-screen bg-white px-6 py-12 font-mono">
+        <main className="mx-auto max-w-2xl">
+          <div className="mb-8">
+            <h1 className="mb-3 text-3xl font-bold text-black">Already Submitted</h1>
+            <p className="text-lg text-zinc-600">
+              You've already completed your check-in for this week.
+            </p>
+          </div>
+          <div className="border-t border-zinc-200 pt-8">
+            <p className="text-zinc-600">
+              You'll receive your next check-in email next week.
+            </p>
+          </div>
+
+          <Footer />
+        </main>
+      </div>
+    )
+  }
 
   // Get current week info
   const { weekNumber, year } = getCurrentWeek()
@@ -41,6 +94,9 @@ export default async function CheckInPage({
         </div>
 
         <form action={submitCheckIn} className="space-y-12">
+          {/* Hidden field to pass user ID */}
+          <input type="hidden" name="userId" value={validation.userId} />
+
           {/* Numeric Inputs Section */}
           <section className="space-y-6">
             <h2 className="border-b border-zinc-300 pb-2 text-xl font-semibold text-black">
@@ -203,6 +259,8 @@ export default async function CheckInPage({
             </p>
           </div>
         </form>
+
+        <Footer />
       </main>
     </div>
   );

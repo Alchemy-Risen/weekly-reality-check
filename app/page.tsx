@@ -1,3 +1,6 @@
+import { signupAction } from '@/app/actions/signup'
+import Footer from '@/app/components/Footer'
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-white px-6 py-24 font-mono">
@@ -51,9 +54,11 @@ export default function Home() {
           </div>
 
           <div className="mt-16">
-            <form className="space-y-4">
+            <form action={signupAction} className="space-y-4">
               <input
                 type="email"
+                name="email"
+                required
                 placeholder="your@email.com"
                 className="w-full border-b-2 border-zinc-300 bg-transparent px-2 py-3 font-mono text-lg focus:border-black focus:outline-none"
               />
@@ -65,6 +70,8 @@ export default function Home() {
               </button>
             </form>
           </div>
+
+          <Footer />
         </div>
       </main>
     </div>
