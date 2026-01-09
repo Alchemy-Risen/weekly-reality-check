@@ -117,7 +117,7 @@ export default async function CheckInPage({
                   name="revenue"
                   step="0.01"
                   required
-                  className="w-full border-b-2 border-zinc-300 bg-transparent px-2 py-2 text-lg focus:border-black focus:outline-none"
+                  className="w-full border-b-2 border-zinc-300 bg-transparent px-2 py-2 text-lg text-black placeholder:text-zinc-400 focus:border-black focus:outline-none"
                   placeholder="0"
                 />
               </div>
@@ -135,7 +135,7 @@ export default async function CheckInPage({
                   name="hours"
                   step="0.5"
                   required
-                  className="w-full border-b-2 border-zinc-300 bg-transparent px-2 py-2 text-lg focus:border-black focus:outline-none"
+                  className="w-full border-b-2 border-zinc-300 bg-transparent px-2 py-2 text-lg text-black placeholder:text-zinc-400 focus:border-black focus:outline-none"
                   placeholder="0"
                 />
               </div>
@@ -154,7 +154,7 @@ export default async function CheckInPage({
                   min="1"
                   max="10"
                   required
-                  className="w-full border-b-2 border-zinc-300 bg-transparent px-2 py-2 text-lg focus:border-black focus:outline-none"
+                  className="w-full border-b-2 border-zinc-300 bg-transparent px-2 py-2 text-lg text-black placeholder:text-zinc-400 focus:border-black focus:outline-none"
                   placeholder="1-10"
                 />
               </div>
@@ -173,7 +173,7 @@ export default async function CheckInPage({
                   min="1"
                   max="10"
                   required
-                  className="w-full border-b-2 border-zinc-300 bg-transparent px-2 py-2 text-lg focus:border-black focus:outline-none"
+                  className="w-full border-b-2 border-zinc-300 bg-transparent px-2 py-2 text-lg text-black placeholder:text-zinc-400 focus:border-black focus:outline-none"
                   placeholder="1-10"
                 />
               </div>
@@ -199,7 +199,7 @@ export default async function CheckInPage({
                   name="q1"
                   required
                   rows={4}
-                  className="w-full border border-zinc-300 bg-transparent px-3 py-2 text-base focus:border-black focus:outline-none"
+                  className="w-full border border-zinc-300 bg-transparent px-3 py-2 text-base text-black placeholder:text-zinc-400 focus:border-black focus:outline-none"
                   placeholder="Be honest..."
                 />
               </div>
@@ -216,7 +216,7 @@ export default async function CheckInPage({
                   name="q2"
                   required
                   rows={4}
-                  className="w-full border border-zinc-300 bg-transparent px-3 py-2 text-base focus:border-black focus:outline-none"
+                  className="w-full border border-zinc-300 bg-transparent px-3 py-2 text-base text-black placeholder:text-zinc-400 focus:border-black focus:outline-none"
                   placeholder="Be honest..."
                 />
               </div>
@@ -240,7 +240,7 @@ export default async function CheckInPage({
                 id="context"
                 name="context"
                 rows={6}
-                className="w-full border border-zinc-300 bg-transparent px-3 py-2 text-base focus:border-black focus:outline-none"
+                className="w-full border border-zinc-300 bg-transparent px-3 py-2 text-base text-black placeholder:text-zinc-400 focus:border-black focus:outline-none"
                 placeholder="No structure, just dump it here..."
               />
             </div>

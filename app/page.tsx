@@ -60,7 +60,7 @@ export default function Home() {
                 name="email"
                 required
                 placeholder="your@email.com"
-                className="w-full border-b-2 border-zinc-300 bg-transparent px-2 py-3 font-mono text-lg focus:border-black focus:outline-none"
+                className="w-full border-b-2 border-zinc-300 bg-transparent px-2 py-3 font-mono text-lg text-black placeholder:text-zinc-400 focus:border-black focus:outline-none"
               />
               <button
                 type="submit"
