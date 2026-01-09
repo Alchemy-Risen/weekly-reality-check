@@ -2,6 +2,7 @@
 
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { getCurrentWeek, getRotatingWeekNumber } from '@/lib/utils'
+import { sendPostSubmitEmail } from '@/lib/email'
 import { redirect } from 'next/navigation'
 
 export async function submitCheckIn(formData: FormData) {
@@ -74,8 +75,26 @@ export async function submitCheckIn(formData: FormData) {
     throw new Error('Failed to save check-in: ' + checkInError.message)
   }
 
-  // TODO: Generate AI summary
-  // TODO: Send post-submit email
+  // Get user email for sending summary
+  const { data: user } = await supabase
+    .from('users')
+    .select('email')
+    .eq('id', userId)
+    .single()
+
+  if (user) {
+    // Send post-submit summary email (don't await - let it happen in background)
+    // TODO: Generate AI summary first
+    sendPostSubmitEmail(
+      user.email,
+      checkIn.id,
+      getRotatingWeekNumber(weekNumber),
+      { revenue, hours, satisfaction, energy }
+    ).catch((error) => {
+      console.error('Failed to send post-submit email:', error)
+      // Don't block the user experience if email fails
+    })
+  }
 
   // Redirect to completion page
   redirect(`/complete/${checkIn.id}`)
