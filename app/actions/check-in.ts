@@ -1,9 +1,9 @@
 'use server'
 
 import { getSupabaseAdmin } from '@/lib/supabase'
-import { getCurrentWeek, getRotatingWeekNumber } from '@/lib/utils'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { getCurrentWeek, generateViewToken } from '@/lib/utils'
 import { sendPostSubmitEmail } from '@/lib/email'
-import { markTokenAsUsed } from '@/lib/magic-link'
 import { generateSummary } from '@/lib/ai-summary'
 import { redirect } from 'next/navigation'
 
@@ -21,17 +21,39 @@ export async function submitCheckIn(formData: FormData) {
   const q2 = formData.get('q2') as string
   const context = formData.get('context') as string
 
-  // Validate userId and token
+  // Validate userId and token presence
   if (!userId || !token) {
     throw new Error('Invalid session')
   }
 
-  // Validate numeric inputs
+  // SECURITY: Atomically validate token AND mark as used in single operation
+  // This prevents race conditions and validates token ownership
+  const { data: tokenData, error: tokenError } = await supabase
+    .from('magic_tokens')
+    .update({ used_at: new Date().toISOString() })
+    .eq('token', token)
+    .eq('user_id', userId) // SECURITY: Verify token belongs to claimed user
+    .is('used_at', null) // Only if not already used
+    .gt('expires_at', new Date().toISOString()) // Only if not expired
+    .select('user_id')
+    .single()
+
+  if (tokenError || !tokenData) {
+    throw new Error('Invalid or expired session. Please request a new check-in link.')
+  }
+
+  // Validate numeric inputs with bounds checking
   if (
     isNaN(revenue) ||
     isNaN(hours) ||
     isNaN(satisfaction) ||
     isNaN(energy) ||
+    !Number.isFinite(revenue) ||
+    !Number.isFinite(hours) ||
+    revenue < 0 ||
+    revenue > 100_000_000 ||
+    hours < 0 ||
+    hours > 168 || // Max hours in a week
     satisfaction < 1 ||
     satisfaction > 10 ||
     energy < 1 ||
@@ -40,15 +62,21 @@ export async function submitCheckIn(formData: FormData) {
     throw new Error('Invalid numeric inputs')
   }
 
-  // Validate text inputs
+  // Validate text inputs with length limits
   if (!q1.trim() || !q2.trim()) {
     throw new Error('Please answer both questions')
+  }
+
+  // Limit text input length to prevent abuse
+  const maxTextLength = 10000
+  if (q1.length > maxTextLength || q2.length > maxTextLength || (context && context.length > maxTextLength)) {
+    throw new Error('Response text is too long')
   }
 
   // Get current week info
   const { weekNumber, year } = getCurrentWeek()
 
-  // Save check-in
+  // Save check-in (token already validated and marked as used)
   const { data: checkIn, error: checkInError } = await supabase
     .from('check_ins')
     .insert({
@@ -78,9 +106,6 @@ export async function submitCheckIn(formData: FormData) {
     throw new Error('Failed to save check-in: ' + checkInError.message)
   }
 
-  // Mark magic link token as used (check-in successfully submitted)
-  await markTokenAsUsed(token)
-
   // Generate AI summary and send email before redirecting
   // Must await - Vercel serverless functions terminate after response is sent
   await generateAndSendSummary(
@@ -88,12 +113,14 @@ export async function submitCheckIn(formData: FormData) {
     userId,
     checkIn.id,
     weekNumber,
-    { revenue, hours, satisfaction, energy },
-    { q1, q2, context }
+    { revenue, hours, satisfaction, energy }
   )
 
-  // Redirect to completion page
-  redirect(`/complete/${checkIn.id}`)
+  // Generate view token to prevent IDOR on completion page
+  const viewToken = await generateViewToken(checkIn.id, userId)
+
+  // Redirect to completion page with verification token
+  redirect(`/complete/${checkIn.id}?vt=${viewToken}`)
 }
 
 /**
@@ -101,12 +128,11 @@ export async function submitCheckIn(formData: FormData) {
  * Errors are logged but don't throw to avoid blocking the redirect
  */
 async function generateAndSendSummary(
-  supabase: any,
+  supabase: SupabaseClient,
   userId: string,
   checkInId: string,
   weekNumber: number,
-  numericData: { revenue: number; hours: number; satisfaction: number; energy: number },
-  narrativeData: { q1: string; q2: string; context?: string }
+  numericData: { revenue: number; hours: number; satisfaction: number; energy: number }
 ) {
   try {
     // Fetch user email
@@ -121,20 +147,8 @@ async function generateAndSendSummary(
       return
     }
 
-    // Get current year for CheckInData
-    const { year } = getCurrentWeek()
-
-    // Construct CheckInData for AI summary
-    const currentCheckIn = {
-      week_number: weekNumber,
-      year,
-      numeric_data: numericData,
-      narrative_data: narrativeData,
-      submitted_at: new Date().toISOString(),
-    }
-
     // Generate AI summary
-    const aiSummary = await generateSummary(userId, currentCheckIn)
+    const aiSummary = await generateSummary(userId)
 
     // Update check-in with AI summary if generated
     if (aiSummary) {

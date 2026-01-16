@@ -31,7 +31,7 @@ export default function MondayFollowupEmail({
           <Text style={heading}>Week {weekNumber} Recap</Text>
 
           <Text style={paragraph}>
-            Here's what you logged last week.
+            Here&apos;s what you logged last week.
           </Text>
 
           <Hr style={hr} />
@@ -61,7 +61,7 @@ export default function MondayFollowupEmail({
             <>
               <Hr style={hr} />
 
-              <Text style={highlight}>"{narrativeHighlight}"</Text>
+              <Text style={highlight}>&quot;{narrativeHighlight}&quot;</Text>
             </>
           )}
 

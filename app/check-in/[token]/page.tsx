@@ -49,12 +49,12 @@ export default async function CheckInPage({
           <div className="mb-8">
             <h1 className="mb-3 text-3xl font-bold text-black">Already Submitted</h1>
             <p className="text-lg text-zinc-600">
-              You've already completed your check-in for this week.
+              You&apos;ve already completed your check-in for this week.
             </p>
           </div>
           <div className="border-t border-zinc-200 pt-8">
             <p className="text-zinc-600">
-              You'll receive your next check-in email next week.
+              You&apos;ll receive your next check-in email next week.
             </p>
           </div>
 
@@ -65,7 +65,7 @@ export default async function CheckInPage({
   }
 
   // Get current week info
-  const { weekNumber, year } = getCurrentWeek()
+  const { weekNumber } = getCurrentWeek()
   const rotatingWeek = getRotatingWeekNumber(weekNumber)
 
   // Fetch questions for this week from database
@@ -184,7 +184,7 @@ export default async function CheckInPage({
           {/* Rotating Questions Section */}
           <section className="space-y-6">
             <h2 className="border-b border-zinc-300 pb-2 text-xl font-semibold text-black">
-              This Week's Questions
+              This Week&apos;s Questions
             </h2>
 
             <div className="space-y-6">
@@ -256,7 +256,7 @@ export default async function CheckInPage({
               Submit Check-In
             </button>
             <p className="mt-4 text-center text-sm text-zinc-500">
-              You'll get an immediate summary, then a follow-up on Monday.
+              You&apos;ll get an immediate summary, then a follow-up on Monday.
             </p>
           </div>
         </form>

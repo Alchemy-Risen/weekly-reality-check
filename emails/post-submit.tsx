@@ -76,11 +76,11 @@ export default function PostSubmitEmail({
           <Hr style={hr} />
 
           <Text style={paragraph}>
-            You'll receive a follow-up on Monday.
+            You&apos;ll receive a follow-up on Monday.
           </Text>
 
           <Text style={paragraph}>
-            Next week's check-in will arrive at the same time.
+            Next week&apos;s check-in will arrive at the same time.
           </Text>
 
           <Hr style={hr} />

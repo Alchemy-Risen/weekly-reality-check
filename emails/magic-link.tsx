@@ -33,7 +33,7 @@ export default function MagicLinkEmail({
           </Text>
 
           <Text style={paragraph}>
-            Click the link below to answer this week's questions. Takes 5-10 minutes.
+            Click the link below to answer this week&apos;s questions. Takes 5-10 minutes.
           </Text>
 
           <Link href={magicLink} style={link}>

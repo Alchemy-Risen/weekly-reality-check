@@ -11,7 +11,7 @@ export default function Home() {
 
         <div className="space-y-6 text-lg leading-relaxed text-zinc-700">
           <p>
-            Every week, you'll get an email. You'll answer some questions. Numbers first, then words.
+            Every week, you&apos;ll get an email. You&apos;ll answer some questions. Numbers first, then words.
           </p>
 
           <p>
@@ -19,11 +19,11 @@ export default function Home() {
           </p>
 
           <p>
-            Just a forced moment to look at what's actually happening, not what you wish was happening.
+            Just a forced moment to look at what&apos;s actually happening, not what you wish was happening.
           </p>
 
           <p className="border-l-4 border-zinc-300 pl-4 italic">
-            "This app feels uncomfortable but useful."
+            &quot;This app feels uncomfortable but useful.&quot;
           </p>
 
           <div className="mt-12 border-t border-zinc-200 pt-8">
@@ -41,7 +41,7 @@ export default function Home() {
 
           <div className="mt-12 border-t border-zinc-200 pt-8">
             <h2 className="mb-4 text-xl font-semibold text-black">
-              What you won't get:
+              What you won&apos;t get:
             </h2>
             <ul className="space-y-2 text-zinc-700">
               <li>✗ Task management</li>
@@ -60,6 +60,7 @@ export default function Home() {
                 name="email"
                 required
                 placeholder="your@email.com"
+                aria-label="Email address"
                 className="w-full border-b-2 border-zinc-300 bg-transparent px-2 py-3 font-mono text-lg text-black placeholder:text-zinc-400 focus:border-black focus:outline-none"
               />
               <button

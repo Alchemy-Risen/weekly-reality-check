@@ -1,16 +1,25 @@
-import { getSupabaseClient } from '@/lib/supabase'
+import { getSupabaseAdmin } from '@/lib/supabase'
+import { verifyViewToken, sanitizeAIOutput } from '@/lib/utils'
 import { notFound } from 'next/navigation'
 import Footer from '@/app/components/Footer'
 
 export default async function CompletePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ vt?: string }>;
 }) {
   const { id } = await params
+  const { vt: viewToken } = await searchParams
 
-  // Fetch the check-in data
-  const supabase = getSupabaseClient()
+  // SECURITY: Require view token to prevent IDOR
+  if (!viewToken) {
+    notFound()
+  }
+
+  // Fetch the check-in data using admin client (server-side only)
+  const supabase = getSupabaseAdmin()
   const { data: checkIn, error } = await supabase
     .from('check_ins')
     .select('*')
@@ -21,7 +30,13 @@ export default async function CompletePage({
     notFound()
   }
 
-  const { numeric_data, narrative_data } = checkIn
+  // SECURITY: Verify the view token matches the check-in
+  const isValidToken = await verifyViewToken(id, checkIn.user_id, viewToken)
+  if (!isValidToken) {
+    notFound()
+  }
+
+  const { numeric_data } = checkIn
 
   return (
     <div className="min-h-screen bg-white px-6 py-12 font-mono">
@@ -29,7 +44,7 @@ export default async function CompletePage({
         <div className="mb-12">
           <h1 className="mb-3 text-3xl font-bold text-black">Check-In Submitted</h1>
           <p className="text-lg text-zinc-600">
-            You'll get a follow-up email on Monday.
+            You&apos;ll get a follow-up email on Monday.
           </p>
         </div>
 
@@ -74,7 +89,7 @@ export default async function CompletePage({
             </h2>
             {checkIn.ai_summary ? (
               <div className="border-l-4 border-zinc-300 bg-zinc-50 p-4 text-base leading-relaxed text-zinc-700">
-                {checkIn.ai_summary}
+                {sanitizeAIOutput(checkIn.ai_summary)}
               </div>
             ) : (
               <div className="border-l-4 border-zinc-300 bg-zinc-50 p-4 text-base leading-relaxed text-zinc-600">
@@ -92,19 +107,19 @@ export default async function CompletePage({
               <li className="flex items-start">
                 <span className="mr-3 text-zinc-400">→</span>
                 <span>
-                  You'll receive an email with your full summary and pattern analysis
+                  You&apos;ll receive an email with your full summary and pattern analysis
                 </span>
               </li>
               <li className="flex items-start">
                 <span className="mr-3 text-zinc-400">→</span>
                 <span>
-                  On Monday, you'll get a follow-up email with your week's data
+                  On Monday, you&apos;ll get a follow-up email with your week&apos;s data
                 </span>
               </li>
               <li className="flex items-start">
                 <span className="mr-3 text-zinc-400">→</span>
                 <span>
-                  Next week, you'll receive another check-in link at the same time
+                  Next week, you&apos;ll receive another check-in link at the same time
                 </span>
               </li>
             </ul>

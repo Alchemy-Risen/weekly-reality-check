@@ -10,7 +10,7 @@ export default function CheckEmailPage() {
 
         <div className="space-y-6 text-lg leading-relaxed text-zinc-700">
           <p>
-            We've sent you a magic link to start your first check-in.
+            We&apos;ve sent you a magic link to start your first check-in.
           </p>
 
           <p>
@@ -19,7 +19,7 @@ export default function CheckEmailPage() {
 
           <div className="mt-12 border-t border-zinc-200 pt-8">
             <p className="text-base text-zinc-600">
-              Didn't get the email? Check your spam folder. Still nothing? Email us at hello@weeklyrealitycheck.com
+              Didn&apos;t get the email? Check your spam folder. Still nothing? Email us at hello@weeklyrealitycheck.com
             </p>
           </div>
 

@@ -14,8 +14,9 @@ export async function generateMagicLink(email: string): Promise<{
 }> {
   const supabase = getSupabaseAdmin()
 
-  // Validate email
-  if (!email || !email.includes('@')) {
+  // Validate email with proper regex
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!email || !emailRegex.test(email)) {
     return { success: false, error: 'Invalid email address' }
   }
 
@@ -23,11 +24,13 @@ export async function generateMagicLink(email: string): Promise<{
 
   try {
     // Get or create user
-    let { data: user, error: userError } = await supabase
+    const { data: existingUser, error: userError } = await supabase
       .from('users')
       .select('*')
       .eq('email', normalizedEmail)
       .single()
+
+    let user = existingUser
 
     if (userError || !user) {
       // Create new user
@@ -113,8 +116,8 @@ export async function validateToken(token: string): Promise<{
     }
 
     // Don't mark as used yet - only mark when check-in is submitted
-    // Return user info
-    const user = magicToken.users as any
+    // Return user info (Supabase join returns related data)
+    const user = magicToken.users as unknown as { id: string; email: string }
 
     return {
       valid: true,

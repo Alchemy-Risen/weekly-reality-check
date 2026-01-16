@@ -13,7 +13,13 @@ export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET
 
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  // SECURITY: Fail closed - if secret is not configured, reject all requests
+  if (!cronSecret) {
+    console.error('CRON_SECRET environment variable is not configured')
+    return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 })
+  }
+
+  if (authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -58,7 +64,8 @@ export async function GET(request: Request) {
     // Send only the most recent check-in per user
     const checkInsByUser = new Map()
     for (const checkIn of checkIns) {
-      const user = checkIn.users as any
+      // Supabase join returns user data in the nested select
+      const user = checkIn.users as unknown as { email: string } | null
       if (!user || !user.email) continue
 
       if (!checkInsByUser.has(user.email)) {
