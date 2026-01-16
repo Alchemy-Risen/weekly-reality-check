@@ -35,22 +35,30 @@ export async function generateSummary(
 ): Promise<string | null> {
   // Check if API key is configured
   if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'placeholder') {
-    console.log('⚠️  Anthropic API key not configured. Skipping AI summary.')
+    console.log('[AI Summary] Skipped - API key not configured')
     return null
   }
+
+  console.log('[AI Summary] Starting generation for user:', userId)
 
   try {
     const supabase = getSupabaseAdmin()
 
     // Fetch user's historical check-ins (last 12 weeks)
-    const { data: previousCheckIns } = await supabase
+    const { data: previousCheckIns, error: fetchError } = await supabase
       .from('check_ins')
       .select('week_number, year, numeric_data, narrative_data, submitted_at')
       .eq('user_id', userId)
       .order('submitted_at', { ascending: false })
       .limit(12)
 
+    if (fetchError) {
+      console.error('[AI Summary] Failed to fetch check-ins:', fetchError)
+      return null
+    }
+
     const allCheckIns = previousCheckIns || []
+    console.log(`[AI Summary] Found ${allCheckIns.length} historical check-ins`)
 
     // Build context for Claude
     const checkInHistory = allCheckIns
@@ -68,6 +76,9 @@ Week ${rotatingWeek} (${index === 0 ? 'current' : `${index} weeks ago`}):
       })
       .join('\n\n')
 
+    // Determine if this is a first check-in (only 1 record)
+    const isFirstCheckIn = allCheckIns.length <= 1
+
     // Call Claude API with strict "no advice" system prompt
     const message = await anthropic.messages.create({
       model: 'claude-3-5-sonnet-20240620',
@@ -77,23 +88,31 @@ Week ${rotatingWeek} (${index === 0 ? 'current' : `${index} weeks ago`}):
 
 CRITICAL RULES - YOU MUST FOLLOW THESE:
 1. NEVER suggest actions, next steps, or recommendations
-2. NEVER use phrases like "you should", "consider", "try", "might want to"
+2. NEVER use phrases like "you should", "consider", "try", "might want to", "you could", "you might"
 3. NEVER give advice, coaching, or motivation
 4. ONLY describe observable patterns in the data
 5. Use factual, neutral language
 6. If you're uncertain about a pattern, say so plainly
 7. Focus on what IS happening, not what SHOULD happen
 8. Keep it brief (2-4 sentences maximum)
+${isFirstCheckIn ? `
+IMPORTANT: This is the user's FIRST check-in. There are no patterns to compare yet.
+- Acknowledge this is week 1 of tracking
+- Summarize the current state factually
+- Do NOT say things like "patterns will emerge" or "more data needed"
+- Simply state what this week's numbers and responses show` : ''}
 
 Good examples:
 - "Revenue decreased 15% while hours worked increased 20%. This is the third week showing this pattern."
 - "Satisfaction scores have ranged between 4-6 for five consecutive weeks."
 - "Energy levels dropped from 8 to 4 over the past three weeks. Revenue remained stable during this period."
+${isFirstCheckIn ? '- "First recorded week: $5,000 revenue on 40 hours with high satisfaction (8/10) and moderate energy (6/10)."' : ''}
 
 Bad examples (DO NOT DO THIS):
 - "You should consider raising your prices."
 - "Try working fewer hours to improve your energy."
 - "It might help to take a break."
+- "Patterns will become clearer over time."
 
 Remember: Describe patterns. Never prescribe actions.`,
       messages: [
@@ -114,30 +133,42 @@ Provide a brief (2-4 sentences) factual summary of patterns you observe.`,
       return null
     }
 
-    // Extra safety check: reject if it contains advice-giving phrases
-    const adviceWords = [
-      'should',
-      'consider',
-      'try',
-      'might want',
-      'recommend',
-      'suggest',
-      'could help',
-      'would benefit',
+    // Extra safety check: reject if it contains direct advice-giving phrases
+    // Use phrase patterns that indicate advice, not just individual words
+    const advicePhrases = [
+      'you should',
+      'you could',
+      'you might',
+      'consider ',  // with space to avoid "considerable"
+      'try to',
+      'try ',
+      'i recommend',
+      'i suggest',
+      'would recommend',
+      'would suggest',
+      'might want to',
+      'could help you',
+      'would benefit from',
+      'take action',
+      'next step',
     ]
 
-    const containsAdvice = adviceWords.some((word) =>
-      summary.toLowerCase().includes(word)
+    const lowerSummary = summary.toLowerCase()
+    const containsAdvice = advicePhrases.some((phrase) =>
+      lowerSummary.includes(phrase)
     )
 
     if (containsAdvice) {
-      console.warn('AI summary contained advice words, rejecting:', summary)
+      const matchedPhrase = advicePhrases.find(p => lowerSummary.includes(p))
+      console.warn(`[AI Summary] Rejected - contained advice phrase "${matchedPhrase}":`, summary)
       return 'Unable to generate pattern summary at this time.'
     }
 
+    console.log('[AI Summary] Generated successfully:', summary.substring(0, 100) + '...')
+
     return summary
   } catch (error) {
-    console.error('Error generating AI summary:', error)
+    console.error('[AI Summary] Error generating summary:', error)
     return null
   }
 }
