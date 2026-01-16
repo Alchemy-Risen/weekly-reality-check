@@ -81,27 +81,24 @@ export async function submitCheckIn(formData: FormData) {
   // Mark magic link token as used (check-in successfully submitted)
   await markTokenAsUsed(token)
 
-  // Generate AI summary (in background - don't block redirect)
-  // This will update the check-in record and send the email
-  generateAndSendSummary(
+  // Generate AI summary and send email before redirecting
+  // Must await - Vercel serverless functions terminate after response is sent
+  await generateAndSendSummary(
     supabase,
     userId,
     checkIn.id,
     weekNumber,
     { revenue, hours, satisfaction, energy },
     { q1, q2, context }
-  ).catch((error) => {
-    console.error('Failed to generate/send summary:', error)
-    // Don't block user experience
-  })
+  )
 
-  // Redirect to completion page immediately
+  // Redirect to completion page
   redirect(`/complete/${checkIn.id}`)
 }
 
 /**
  * Generate AI summary and send post-submit email
- * Runs in background - errors are logged but don't affect user flow
+ * Errors are logged but don't throw to avoid blocking the redirect
  */
 async function generateAndSendSummary(
   supabase: any,
